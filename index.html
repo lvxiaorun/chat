@@ -100,8 +100,8 @@
             }
 
             ws.onmessage = function (result) {
-
-                //console.log(result.data);
+                console.log(result)
+                console.log(result.data);
                 var data = JSON.parse(result.data);
                 $(data.UserMsgs).each(function (i, item) {
                     showMsg("divShow", tl.paperDiv("【" + item.UserName + "】：" + item.Msg), true);
