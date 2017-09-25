@@ -72,6 +72,17 @@ J:
 			allData.UserInfos = make([]UserInfo,0)
 		}
 		fmt.Println("开始解析数据")
+		errr := websocket.Message.Receive(ws,&data)
+		if errr != nil{
+			for key,value := range allUser{
+				if value.Conn == ws{
+					delete(allUser,key) //删除错误的连接
+				}
+			}
+			fmt.Println("接收消息失败")
+			break
+		}
+		fmt.Println("data:",data)
 	}
 
 }
