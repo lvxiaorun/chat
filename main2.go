@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"html/template"
 	"encoding/json"
+	"strings"
 )
 
 var allData AllData
@@ -30,11 +31,19 @@ func main() {
 
 func h_index2(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
-	t, _ := template.ParseFiles("index.html")
+	t, _ := template.ParseFiles("index2.html")
 	t.Execute(w, name)
 	//http.ServeFile(w, r, "index2.html")
 }
-
+//
+//func h_webSocket2Login(ws *websocket.Conn){
+//	var name string
+//	err := websocket.Message.Receive(ws,&name)
+//	if err != nil{
+//		fmt.Println("Login err name:",name,"err:",err)
+//		return
+//	}
+//}
 func h_webSocket2(ws *websocket.Conn) {
 	var msg Message
 	var data string
@@ -53,7 +62,7 @@ J:
 				partdata := AllData{}
 				partdata.UserInfos = allData.UserInfos
 				for _, item := range allData.Messages {
-					if item.ToUser == key {
+					if item.ToUser == key || item.ToUser == "all" {
 						partdata.Messages = append(partdata.Messages, item)
 					}
 				}
@@ -69,7 +78,7 @@ J:
 					break J
 				}
 			}
-			allData.UserInfos = make([]UserInfo,0)
+			allData.Messages = make([]Message,0)
 		}
 		fmt.Println("开始解析数据")
 		errr := websocket.Message.Receive(ws,&data)
@@ -80,9 +89,23 @@ J:
 				}
 			}
 			fmt.Println("接收消息失败")
-			break
+			break J
 		}
 		fmt.Println("data:",data)
+		data = strings.Replace(data, "\n", "", 0)
+		errby := json.Unmarshal([]byte(data),&msg)
+		if errby != nil{
+			fmt.Println("解析数据出错:",errby)
+			break J
+		}
+		fmt.Println("数据类型:",msg.DataType)
+		allData.Messages = append(allData.Messages,msg)
+		switch msg.DataType {
+		case "login":
+			fmt.Println(msg.UserName+"上线")
+			allData.UserInfos = append(allData.UserInfos,UserInfo{msg.UserName,ws})
+			allUser[msg.UserName] = UserInfo{msg.UserName,ws}
+		}
 	}
 
 }
