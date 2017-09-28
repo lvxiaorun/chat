@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"time"
-	"golang.org/x/net/websocket"
+
 	"net/http"
 	"html/template"
 	"encoding/json"
 	"strings"
+	"golang.org/x/net/websocket"
 )
 
 var allData AllData
@@ -35,6 +36,7 @@ func h_index2(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, name)
 	//http.ServeFile(w, r, "index2.html")
 }
+
 //
 //func h_webSocket2Login(ws *websocket.Conn){
 //	var name string
@@ -72,40 +74,47 @@ J:
 					break J
 				}
 				errsend := websocket.Message.Send(value.Conn, string(b))
-				if errsend != nil{
-					fmt.Println("发送消息失败,user:",key,":",value)
-					delete(allUser,key)
+				if errsend != nil {
+					fmt.Println("发送消息失败,user:", key, ":", value)
+					delete(allUser, key)
 					break J
 				}
 			}
-			allData.Messages = make([]Message,0)
+			allData.Messages = make([]Message, 0)
 		}
 		fmt.Println("开始解析数据")
-		errr := websocket.Message.Receive(ws,&data)
-		if errr != nil{
-			for key,value := range allUser{
-				if value.Conn == ws{
-					delete(allUser,key) //删除错误的连接
+		errr := websocket.Message.Receive(ws, &data)
+		if errr != nil {
+			for key, value := range allUser {
+				if value.Conn == ws {
+					delete(allUser, key) //删除错误的连接
 				}
 			}
 			fmt.Println("接收消息失败")
 			break J
 		}
-		fmt.Println("data:",data)
+		fmt.Println("data:", data)
 		data = strings.Replace(data, "\n", "", 0)
-		errby := json.Unmarshal([]byte(data),&msg)
-		if errby != nil{
-			fmt.Println("解析数据出错:",errby)
+		errby := json.Unmarshal([]byte(data), &msg)
+		if errby != nil {
+			fmt.Println("解析数据出错:", errby)
 			break J
 		}
-		fmt.Println("数据类型:",msg.DataType)
-		allData.Messages = append(allData.Messages,msg)
+		fmt.Println("数据类型:", msg.DataType)
 		switch msg.DataType {
 		case "login":
-			fmt.Println(msg.UserName+"上线")
-			allData.UserInfos = append(allData.UserInfos,UserInfo{msg.UserName,ws})
-			allUser[msg.UserName] = UserInfo{msg.UserName,ws}
+			fmt.Println(msg.Msg)
+			if _,ok := allUser[msg.UserName]; ok{
+				msg.Msg = msg.UserName + "重新连接"
+			}
+			//allData.UserInfos = append(allData.UserInfos, UserInfo{msg.UserName, ws})
+			allUser[msg.UserName] = UserInfo{msg.UserName, ws}
+			allData.UserInfos = make([]UserInfo, 0)
+			for _, value := range allUser {
+				allData.UserInfos = append(allData.UserInfos, value)
+			}
 		}
+		allData.Messages = append(allData.Messages, msg)
 	}
 
 }
